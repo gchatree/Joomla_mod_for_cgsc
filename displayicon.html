@@ -1,9 +1,9 @@
 <script>
-    (function() {
+    (function () {
         // Constants
         const STUDENT_DETAIL_URL = 'index.php?option=com_content&view=article&id=81&catid=2&Itemid=151';
         let studentData = [];
-    
+
         // Add required styles
         const styleSheet = document.createElement('style');
         styleSheet.textContent = `
@@ -16,12 +16,45 @@
                 overflow-y: auto;
             }
     
-            @media screen and (min-width: 768px) {
+
+
+
+
+            @media (min-width: 1024px) and (max-width: 3600px){
+                .grid-container {
+                    grid-template-columns: repeat(4, 1fr);
+                }
+            }
+
+            @media (min-width: 768px) and (max-width: 1023px){
                 .grid-container {
                     grid-template-columns: repeat(2, 1fr);
                 }
             }
-    
+
+            @media (min-width: 480px) and (max-width: 767px){
+                .grid-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+
+            @media (min-width: 0px) and (max-width: 479px){
+                .grid-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+
+            }
+
+
+
+
+
+
+
+
+
+
+
             .student-card {
                 display: flex;
                 flex-direction: column;
@@ -92,7 +125,7 @@
             }
         `;
         document.head.appendChild(styleSheet);
-    
+
         // Load Font Awesome if not already present
         if (!document.querySelector('link[href*="font-awesome"]')) {
             const fontAwesome = document.createElement('link');
@@ -100,38 +133,38 @@
             fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
             document.head.appendChild(fontAwesome);
         }
-    
+
         async function tryLoadImage(studentId) {
             const extensions = ['jpg', 'png', 'jpeg', 'gif'];
-            
+
             const imagePromises = extensions.map(ext => {
                 return new Promise((resolve) => {
                     const img = new Image();
                     const path = `/student_image/${studentId}.${ext}`;
-                    
+
                     img.onload = () => resolve(path);
                     img.onerror = () => resolve(null);
                     img.src = path;
                 });
             });
-    
+
             for (const imagePromise of imagePromises) {
                 const path = await imagePromise;
                 if (path) return path;
             }
-    
+
             return null;
         }
-    
+
         function createStudentCards(students) {
             const gridContainer = document.createElement('div');
             gridContainer.className = 'grid-container';
-    
+
             students.forEach(student => {
                 const card = document.createElement('a');
                 card.className = 'student-card';
                 card.href = `${STUDENT_DETAIL_URL}&stu_id=${student.stu_id}`;
-    
+
                 card.innerHTML = `
                     <div class="image-circle">
                         <i class="fas fa-user"></i>
@@ -140,16 +173,16 @@
                     <div class="student-name">${student.FullName}</div>
                     <div class="student-syndicate">พวกที่ ${student.Syndicate || 'N/A'}</div>
                 `;
-    
+
                 gridContainer.appendChild(card);
-    
+
                 tryLoadImage(student.stu_id).then(imagePath => {
                     if (imagePath) {
                         const imageCircle = card.querySelector('.image-circle');
                         const img = document.createElement('img');
                         img.src = imagePath;
                         img.alt = student.FullName;
-                        
+
                         img.onload = () => {
                             imageCircle.innerHTML = '';
                             imageCircle.appendChild(img);
@@ -157,7 +190,7 @@
                     }
                 }).catch(console.error);
             });
-    
+
             const observer = new IntersectionObserver(
                 (entries) => {
                     entries.forEach(entry => {
@@ -171,14 +204,14 @@
                     rootMargin: '0px 0px -50px 0px'
                 }
             );
-    
+
             gridContainer.querySelectorAll('.student-card').forEach(card => {
                 observer.observe(card);
             });
-    
+
             return gridContainer;
         }
-    
+
         async function loadIdList() {
             try {
                 const response = await fetch('/sheet/stu_id.json');
@@ -187,7 +220,7 @@
                 }
                 const data = await response.json();
                 studentData = data[0];
-    
+
                 const studentListBox = document.querySelector('.u-group-2');
                 if (studentListBox) {
                     studentListBox.innerHTML = '';
@@ -207,7 +240,7 @@
                 document.querySelector('.u-group-2').appendChild(errorMessage);
             }
         }
-    
+
         // Start the update process when the page is ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', loadIdList);
@@ -215,4 +248,4 @@
             loadIdList();
         }
     })();
-    </script>
+</script>
