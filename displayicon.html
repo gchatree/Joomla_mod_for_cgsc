@@ -11,7 +11,9 @@
                 overflow-y: auto;
                 padding: 0 10px;
             }
-            
+            .div-g-l{
+                width: 100%;
+            }
             .grid-container {
                 display: grid;
                 grid-template-columns: repeat(2, 1fr);
@@ -114,41 +116,63 @@
     
             .view-toggle-container {
                 display: flex;
+                align-items: center;
                 gap: 12px;
                 padding: 16px;
                 border-bottom: 1px solid #e5e7eb;
                 margin-bottom: 16px;
             }
     
-            .view-toggle-btn {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                padding: 8px 16px;
-                border: 1px solid #22c55e;
-                border-radius: 8px;
-                background: #22c55e;
-                color: white;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
-    
-            .view-toggle-btn:hover {
-                background: #16a34a;
-            }
-    
-            .view-toggle-btn.active {
-                background: white;
-                color: #22c55e;
-            }
-    
-            .view-toggle-btn i {
-                font-size: 16px;
-            }
-    
-            .view-toggle-btn span {
+            .view-label {
                 font-size: 14px;
                 font-weight: 500;
+                color: #666;
+            }
+    
+            /* iOS Switch Styles */
+            .switch-container {
+                width: 51px;
+                height: 31px;
+                position: relative;
+            }
+    
+            .checkbox {
+                opacity: 0;
+                width: 0;
+                height: 0;
+                position: absolute;
+            }
+    
+            .switch {
+                width: 100%;
+                height: 100%;
+                display: block;
+                background-color: #B6CBBD;
+                border-radius: 16px;
+                cursor: pointer;
+                transition: all 0.2s ease-out;
+            }
+    
+            .slider {
+                width: 27px;
+                height: 27px;
+                position: absolute;
+                left: calc(50% - 27px/2 - 10px);
+                top: calc(50% - 27px/2);
+                border-radius: 50%;
+                background: #FFFFFF;
+                box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15), 0px 3px 1px rgba(0, 0, 0, 0.06);
+                transition: all 0.2s ease-out;
+                cursor: pointer;
+            }
+    
+            .checkbox:checked + .switch {
+                background-color: #34C759;
+            }
+    
+            .checkbox:checked + .switch .slider {
+                left: calc(50% - 27px/2 + 10px);
+                top: calc(50% - 27px/2);
             }
     
             /* Table Styles */
@@ -205,44 +229,45 @@
             document.head.appendChild(fontAwesome);
         }
     
-        function createViewToggleButtons(onViewChange) {
+        function createViewToggleSwitch(onViewChange) {
             const toggleContainer = document.createElement('div');
             toggleContainer.className = 'view-toggle-container';
             
-            const iconViewBtn = document.createElement('button');
-            iconViewBtn.className = 'view-toggle-btn active';
-            iconViewBtn.innerHTML = `
-                <i class="fas fa-grid-2"></i>
-                <span>Icon View</span>
-            `;
+            const gridLabel = document.createElement('span');
+            gridLabel.className = 'view-label';
+            gridLabel.textContent = 'Grid View';
             
-            const listViewBtn = document.createElement('button');
-            listViewBtn.className = 'view-toggle-btn';
-            listViewBtn.innerHTML = `
-                <i class="fas fa-list"></i>
-                <span>List View</span>
-            `;
+            const switchContainer = document.createElement('div');
+            switchContainer.className = 'switch-container';
             
-            iconViewBtn.addEventListener('click', () => {
-                if (currentView !== 'grid') {
-                    currentView = 'grid';
-                    iconViewBtn.classList.add('active');
-                    listViewBtn.classList.remove('active');
-                    onViewChange('grid');
-                }
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'checkbox';
+            checkbox.id = 'view-toggle';
+            
+            const switchLabel = document.createElement('label');
+            switchLabel.className = 'switch';
+            switchLabel.setAttribute('for', 'view-toggle');
+            
+            const slider = document.createElement('span');
+            slider.className = 'slider';
+            
+            const listLabel = document.createElement('span');
+            listLabel.className = 'view-label';
+            listLabel.textContent = 'List View';
+            
+            switchLabel.appendChild(slider);
+            switchContainer.appendChild(checkbox);
+            switchContainer.appendChild(switchLabel);
+            
+            toggleContainer.appendChild(gridLabel);
+            toggleContainer.appendChild(switchContainer);
+            toggleContainer.appendChild(listLabel);
+            
+            checkbox.addEventListener('change', () => {
+                currentView = checkbox.checked ? 'list' : 'grid';
+                onViewChange(currentView);
             });
-            
-            listViewBtn.addEventListener('click', () => {
-                if (currentView !== 'list') {
-                    currentView = 'list';
-                    listViewBtn.classList.add('active');
-                    iconViewBtn.classList.remove('active');
-                    onViewChange('list');
-                }
-            });
-            
-            toggleContainer.appendChild(iconViewBtn);
-            toggleContainer.appendChild(listViewBtn);
             
             return toggleContainer;
         }
@@ -353,8 +378,8 @@
     
         function createStudentContainer(students) {
             const containerWrapper = document.createElement('div');
-            
-            const toggleButtons = createViewToggleButtons((viewType) => {
+            containerWrapper.classList="div-g-l";
+            const toggleButtons = createViewToggleSwitch((viewType) => {
                 const contentContainer = containerWrapper.querySelector('.content-container');
                 contentContainer.innerHTML = '';
                 contentContainer.appendChild(
