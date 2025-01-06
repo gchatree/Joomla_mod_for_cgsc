@@ -457,8 +457,8 @@
             ${students.map(student => `
                 <tr>
                     <td><a href="#" data-student-id="${student.stu_id}">${student.stu_id}</a></td>
-                    <td>${student.FullName}</td>
-                    <td>พวกที่ ${student.Syndicate || 'N/A'}</td>
+                    <td><a href="#" data-student-id="${student.stu_id}">${student.FullName}</a></td>
+                    <td><a href="#" data-student-id="${student.stu_id}">พวกที่ ${student.Syndicate || 'N/A'}</a></td>
                 </tr>
             `).join('')}
         </tbody>
