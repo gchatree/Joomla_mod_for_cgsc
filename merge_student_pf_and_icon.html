@@ -446,27 +446,34 @@
             table.className = 'student-table';
 
             table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Student ID</th>
-                        <th>Full Name</th>
-                        <th>Syndicate</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${students.map(student => `
-                        <tr>
-                            <td><a href="${STUDENT_DETAIL_URL}&stu_id=${student.stu_id}">${student.stu_id}</a></td>
-                            <td>${student.FullName}</td>
-                            <td>พวกที่ ${student.Syndicate || 'N/A'}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            `;
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Full Name</th>
+                <th>Syndicate</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${students.map(student => `
+                <tr>
+                    <td><a href="#" data-student-id="${student.stu_id}">${student.stu_id}</a></td>
+                    <td>${student.FullName}</td>
+                    <td>พวกที่ ${student.Syndicate || 'N/A'}</td>
+                </tr>
+            `).join('')}
+        </tbody>
+    `;
+
+            table.querySelectorAll('a[data-student-id]').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleStudentSearch(link.dataset.studentId);
+                });
+            });
 
             return table;
         }
-
+        
         function createStudentCards(students) {
             const gridContainer = document.createElement('div');
             gridContainer.className = 'grid-container';
