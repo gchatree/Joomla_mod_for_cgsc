@@ -1,0 +1,561 @@
+<script>
+    (function () {
+        const STUDENT_DETAIL_URL = 'index.php?option=com_content&view=article&id=81&catid=2&Itemid=151';
+        let studentData = [];
+        let currentView = 'grid';
+        let currentFilter = 'all';
+    
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            .content-container {
+                height: calc(100vh - 100px);
+                overflow-y: auto;
+                padding: 0 10px;
+            }
+            .div-g-l{
+                width: 100%;
+            }
+            .grid-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 10px;
+            }
+    
+            @media (min-width: 1024px) and (max-width: 3600px){
+                .grid-container {
+                    grid-template-columns: repeat(4, 1fr);
+                }
+            }
+    
+            @media (min-width: 768px) and (max-width: 1023px){
+                .grid-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+    
+            @media (min-width: 480px) and (max-width: 767px){
+                .grid-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+    
+            @media (min-width: 0px) and (max-width: 479px){
+                .grid-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+    
+            .student-card {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 5px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                cursor: pointer;
+                background-color: white;
+                text-decoration: none;
+                color: inherit;
+                opacity: 0;
+                transform: scale(0.5);
+                transition: all 0.6s ease-out;
+            }
+    
+            .student-card:hover {
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+                transform: translateY(-5px);
+            }
+    
+            .student-card.visible {
+                opacity: 1;
+                transform: scale(1);
+            }
+    
+            .image-circle {
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                overflow: hidden;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #f0f0f0;
+            }
+    
+            .image-circle img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                object-position: top;
+            }
+    
+            .image-circle .fa-user {
+                font-size: 30px;
+                color: #999;
+            }
+    
+            .student-id {
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 3px;
+            }
+    
+            .student-name {
+                font-size: 14px;
+                font-weight: bold;
+                color: #333;
+                text-align: center;
+            }
+    
+            .student-syndicate {
+                font-size: 12px;
+                color: #666;
+                margin-top: 3px;
+            }
+    
+            .view-toggle-container {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 16px;
+                border-bottom: 1px solid #e5e7eb;
+                margin-bottom: 16px;
+            }
+    
+            .view-label {
+                font-size: 14px;
+                font-weight: 500;
+                color: #666;
+            }
+    
+            /* iOS Switch Styles */
+            .switch-container {
+                width: 51px;
+                height: 31px;
+                position: relative;
+            }
+    
+            .checkbox {
+                opacity: 0;
+                width: 0;
+                height: 0;
+                position: absolute;
+            }
+    
+            .switch {
+                width: 100%;
+                height: 100%;
+                display: block;
+                background-color: #B6CBBD;
+                border-radius: 16px;
+                cursor: pointer;
+                transition: all 0.2s ease-out;
+            }
+    
+            .slider {
+                width: 27px;
+                height: 27px;
+                position: absolute;
+                left: calc(50% - 27px/2 - 10px);
+                top: calc(50% - 27px/2);
+                border-radius: 50%;
+                background: #FFFFFF;
+                box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15), 0px 3px 1px rgba(0, 0, 0, 0.06);
+                transition: all 0.2s ease-out;
+                cursor: pointer;
+            }
+    
+            .checkbox:checked + .switch {
+                background-color: #34C759;
+            }
+    
+            .checkbox:checked + .switch .slider {
+                left: calc(50% - 27px/2 + 10px);
+                top: calc(50% - 27px/2);
+            }
+    
+            /* Dropdown Button Styles */
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+    
+            .dropdown-button {
+                padding: 8px 16px;
+                background-color: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                color: #666;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+    
+            .dropdown-button:hover {
+                background-color: #f9fafb;
+            }
+    
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                background-color: #ffffff;
+                min-width: 160px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1;
+                border-radius: 6px;
+                margin-top: 4px;
+            }
+    
+            .dropdown-content.show {
+                display: block;
+            }
+    
+            .dropdown-item {
+                padding: 12px 16px;
+                text-decoration: none;
+                display: block;
+                color: #666;
+                cursor: pointer;
+            }
+    
+            .dropdown-item:hover {
+                background-color: #f9fafb;
+            }
+    
+            /* Table Styles */
+            .content-container::-webkit-scrollbar {
+                width: 8px;
+            }
+            
+            .content-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+            
+            .content-container::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 4px;
+            }
+            
+            .content-container::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+    
+            .student-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+    
+            .student-table th,
+            .student-table td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid #e5e7eb;
+            }
+    
+            .student-table th {
+                background-color: #f9fafb;
+                font-weight: 600;
+            }
+    
+            .student-table tr:hover {
+                background-color: #f9fafb;
+            }
+    
+            .student-table a {
+                text-decoration: none;
+                color: inherit;
+            }
+        `;
+        document.head.appendChild(styleSheet);
+    
+        if (!document.querySelector('link[href*="font-awesome"]')) {
+            const fontAwesome = document.createElement('link');
+            fontAwesome.rel = 'stylesheet';
+            fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
+            document.head.appendChild(fontAwesome);
+        }
+    
+        function createViewToggleSwitch(onViewChange) {
+            const toggleContainer = document.createElement('div');
+            toggleContainer.className = 'view-toggle-container';
+            
+            const gridLabel = document.createElement('span');
+            gridLabel.className = 'view-label';
+            gridLabel.textContent = 'Grid View';
+            
+            const switchContainer = document.createElement('div');
+            switchContainer.className = 'switch-container';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'checkbox';
+            checkbox.id = 'view-toggle';
+            
+            const switchLabel = document.createElement('label');
+            switchLabel.className = 'switch';
+            switchLabel.setAttribute('for', 'view-toggle');
+            
+            const slider = document.createElement('span');
+            slider.className = 'slider';
+            
+            const listLabel = document.createElement('span');
+            listLabel.className = 'view-label';
+            listLabel.textContent = 'List View';
+    
+            // Create dropdown button and content
+            const dropdown = document.createElement('div');
+            dropdown.className = 'dropdown';
+            
+            const dropdownButton = document.createElement('button');
+            dropdownButton.className = 'dropdown-button';
+            dropdownButton.innerHTML = `
+                <span>Filter by Syndicate</span>
+                <i class="fas fa-chevron-down"></i>
+            `;
+    
+            const dropdownContent = document.createElement('div');
+            dropdownContent.className = 'dropdown-content';
+            
+            // Get unique syndicates from studentData
+            const syndicates = [...new Set(studentData.map(student => student.Syndicate || 'N/A'))].sort((a, b) => {
+                if (a === 'N/A') return 1;
+                if (b === 'N/A') return -1;
+                return a - b;
+            });
+    
+            // Function to apply filter
+            const applyFilter = (filter) => {
+                currentFilter = filter;
+                dropdownButton.querySelector('span').textContent = 
+                    filter === 'all' ? 'Filter by Syndicate' :
+                    filter === 'N/A' ? 'No Syndicate' :
+                    `Syndicate ${filter}`;
+                
+                const contentContainer = toggleContainer.parentElement.querySelector('.content-container');
+                const filteredStudents = filter === 'all' 
+                    ? studentData 
+                    : studentData.filter(student => (student.Syndicate || 'N/A') === filter);
+                
+                contentContainer.innerHTML = '';
+                contentContainer.appendChild(
+                    currentView === 'grid' ? createStudentCards(filteredStudents) : createStudentTable(filteredStudents)
+                );
+                dropdownContent.classList.remove('show');
+            };
+    
+            // Add "All" option
+            const allItem = document.createElement('div');
+            allItem.className = 'dropdown-item';
+            allItem.textContent = 'All Syndicates';
+            allItem.addEventListener('click', () => applyFilter('all'));
+            dropdownContent.appendChild(allItem);
+    
+            // Add syndicate options
+            syndicates.forEach(syndicate => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.textContent = syndicate === 'N/A' ? 'No Syndicate' : `Syndicate ${syndicate}`;
+                item.addEventListener('click', () => applyFilter(syndicate));
+                dropdownContent.appendChild(item);
+            });
+            
+            // Toggle dropdown on button click
+            dropdownButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownContent.classList.toggle('show');
+            });
+    
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                dropdownContent.classList.remove('show');
+            });
+            
+            dropdown.appendChild(dropdownButton);
+            dropdown.appendChild(dropdownContent);
+            
+            switchLabel.appendChild(slider);
+            switchContainer.appendChild(checkbox);
+            switchContainer.appendChild(switchLabel);
+            
+            toggleContainer.appendChild(gridLabel);
+            toggleContainer.appendChild(switchContainer);
+            toggleContainer.appendChild(listLabel);
+            toggleContainer.appendChild(dropdown);
+            
+            checkbox.addEventListener('change', () => {
+                currentView = checkbox.checked ? 'list' : 'grid';
+                onViewChange(currentView);
+            });
+            
+            return toggleContainer;
+        }
+    
+        async function tryLoadImage(studentId) {
+            const extensions = ['jpg', 'png', 'jpeg', 'gif'];
+    
+            const imagePromises = extensions.map(ext => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    const path = `/student_image/${studentId}.${ext}`;
+    
+                    img.onload = () => resolve(path);
+                    img.onerror = () => resolve(null);
+                    img.src = path;
+                });
+            });
+    
+            for (const imagePromise of imagePromises) {
+                const path = await imagePromise;
+                if (path) return path;
+            }
+    
+            return null;
+        }
+    
+        function createStudentTable(students) {
+            const table = document.createElement('table');
+            table.className = 'student-table';
+            
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Full Name</th>
+                        <th>Syndicate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${students.map(student => `
+                        <tr>
+                            <td><a href="${STUDENT_DETAIL_URL}&stu_id=${student.stu_id}">${student.stu_id}</a></td>
+                            <td>${student.FullName}</td>
+                            <td>พวกที่ ${student.Syndicate || 'N/A'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            
+            return table;
+        }
+    
+        function createStudentCards(students) {
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'grid-container';
+    
+            students.forEach(student => {
+                const card = document.createElement('a');
+                card.className = 'student-card';
+                card.href = `${STUDENT_DETAIL_URL}&stu_id=${student.stu_id}`;
+    
+                card.innerHTML = `
+                    <div class="image-circle">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="student-id">${student.stu_id}</div>
+                    <div class="student-name">${student.FullName}</div>
+                    <div class="student-syndicate">พวกที่ ${student.Syndicate || 'N/A'}</div>
+                `;
+    
+                gridContainer.appendChild(card);
+    
+                tryLoadImage(student.stu_id).then(imagePath => {
+                    if (imagePath) {
+                        const imageCircle = card.querySelector('.image-circle');
+                        const img = document.createElement('img');
+                        img.src = imagePath;
+                        img.alt = student.FullName;
+    
+                        img.onload = () => {
+                            imageCircle.innerHTML = '';
+                            imageCircle.appendChild(img);
+                        };
+                    }
+                }).catch(console.error);
+            });
+    
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                        }
+                    });
+                },
+                {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -50px 0px'
+                }
+            );
+    
+            gridContainer.querySelectorAll('.student-card').forEach(card => {
+                observer.observe(card);
+            });
+    
+            return gridContainer;
+        }
+    
+        function createStudentContainer(students) {
+            const containerWrapper = document.createElement('div');
+            containerWrapper.classList = "div-g-l";
+            const toggleButtons = createViewToggleSwitch((viewType) => {
+                const contentContainer = containerWrapper.querySelector('.content-container');
+                const filteredStudents = currentFilter === 'all' 
+                    ? students 
+                    : students.filter(student => (student.Syndicate || 'N/A') === currentFilter);
+                contentContainer.innerHTML = '';
+                contentContainer.appendChild(
+                    viewType === 'grid' ? createStudentCards(filteredStudents) : createStudentTable(filteredStudents)
+                );
+            });
+            
+            containerWrapper.appendChild(toggleButtons);
+    
+            const contentContainer = document.createElement('div');
+            contentContainer.className = 'content-container';
+            contentContainer.appendChild(createStudentCards(students));
+            containerWrapper.appendChild(contentContainer);
+    
+            return containerWrapper;
+        }
+    
+        async function loadIdList() {
+            try {
+                const response = await fetch('/sheet/stu_id.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                studentData = data[0];
+    
+                const studentListBox = document.querySelector('.u-group-2');
+                if (studentListBox) {
+                    studentListBox.innerHTML = '';
+                    studentListBox.appendChild(createStudentContainer(studentData));
+                }
+            } catch (error) {
+                console.error('Error loading ID list:', error);
+                const errorMessage = document.createElement('div');
+                errorMessage.style.color = 'red';
+                errorMessage.style.padding = '20px';
+                errorMessage.style.textAlign = 'center';
+                errorMessage.innerHTML = `
+                    เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}
+                    <br>
+                    กรุณาตรวจสอบการเชื่อมต่อ
+                `;
+                document.querySelector('.u-group-2').appendChild(errorMessage);
+            }
+        }
+    
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadIdList);
+        } else {
+            loadIdList();
+        }
+    })();
+        </script>
