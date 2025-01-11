@@ -1,0 +1,76 @@
+function togglePageColumns(closeParam) {
+    // Wait for DOM to be fully loaded
+    if (document.readyState === 'complete') {
+        executeToggle();
+    } else {
+        window.addEventListener('load', executeToggle);
+    }
+
+    function executeToggle() {
+        // Find the columns based on the existing structure
+        const leftColumn = document.querySelector('.u-size-31-md.u-size-31-sm.u-size-31-xs.u-size-39-lg.u-size-39-xl.u-layout-cell-1');
+        const rightColumn = document.querySelector('.u-size-21-lg.u-size-21-xl.u-size-29-md.u-size-29-sm.u-size-29-xs.u-layout-cell-2');
+
+        // Function to handle visibility
+        const setColumnVisibility = (element, isVisible) => {
+            if (element) {
+                if (!isVisible) {
+                    element.style.display = 'none';
+                    element.style.width = '0%';
+                } else {
+                    element.style.display = '';
+                    element.style.width = '';
+                }
+            }
+        };
+
+        // Function to adjust container widths
+        const adjustContainerWidths = () => {
+            if (leftColumn && rightColumn) {
+                const parent = leftColumn.parentElement;
+                if (parent) {
+                    if (closeParam === "L") {
+                        rightColumn.style.width = '100%';
+                    } else if (closeParam === "R") {
+                        leftColumn.style.width = '100%';
+                    } else {
+                        leftColumn.style.width = '';
+                        rightColumn.style.width = '';
+                    }
+                }
+            }
+        };
+
+        // Handle different cases based on closeParam
+        switch(closeParam) {
+            case "L":
+                setColumnVisibility(leftColumn, false);
+                setColumnVisibility(rightColumn, true);
+                break;
+            case "R":
+                setColumnVisibility(leftColumn, true);
+                setColumnVisibility(rightColumn, false);
+                break;
+            case "RL":
+                setColumnVisibility(leftColumn, false);
+                setColumnVisibility(rightColumn, false);
+                break;
+            default:
+                setColumnVisibility(leftColumn, true);
+                setColumnVisibility(rightColumn, true);
+                break;
+        }
+
+        // Adjust container widths after visibility changes
+        adjustContainerWidths();
+    }
+}
+
+// Example usage for PHP:
+// <script>togglePageColumns('<?php echo $close; ?>');</script>
+
+// Example usage for direct JavaScript call:
+// togglePageColumns('L');  // Hide left column
+// togglePageColumns('R');  // Hide right column
+// togglePageColumns('RL'); // Hide both columns
+// togglePageColumns('');   // Show both columns
