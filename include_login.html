@@ -82,6 +82,9 @@
                 .grid-container {
                     grid-template-columns: repeat(2, 1fr);
                 }
+                .u-group-2 {
+                    display: block; /* Default visible state on mobile */
+                }
             }
     
             .student-card {
@@ -581,19 +584,26 @@
     }
 
     function toggleBoxH6() {
-    const listBoxTitle = document.querySelector('.u-text-2');
-    if (!listBoxTitle) {
-        console.warn('List box title element (.u-text-2) not found');
-        return;
+        if (window.innerWidth <= 576) {
+            const listBox = document.querySelector('.u-group-2');
+            if (listBox) {
+                if (listBox.style.display === 'none') {
+                    showstudentlistbox(true);
+                } else {
+                    showstudentlistbox(false);
+                }
+            }
+        }
     }
-
-    // Get the computed style to handle initial state correctly
-    const computedStyle = window.getComputedStyle(listBoxTitle);
-    const isCurrentlyVisible = computedStyle.display !== 'none';
-
-    // Toggle the display
-    listBoxTitle.style.display = isCurrentlyVisible ? 'none' : '';
-}
+    // show/hide student list box
+    function showstudentlistbox(showed){
+        const listBoxs = document.querySelector('.u-group-2');
+        if (showed) {
+            listBoxs.style.display='';
+        } else {
+            listBoxs.style.display='none';
+        }
+    }
 
     // Function to update profile with fetched data
     function updateProfile(data) {
@@ -610,11 +620,18 @@
         populateTable(1, data[0]); // Personal info
         populateTable(2, data[1]); // Physical scores
         populateTable(3, data[2]); // Academic results
+
+        if (window.innerWidth <= 576) {
+            showstudentlistbox(false);
+        }
+        
     }
 
     async function handleStudentSearch(studentId) {
-        if (!studentId) return;
-
+        if (!studentId) {
+            showstudentlistbox(true);
+            return;
+        }
         try {
             const response = await fetch(`/sheet/student_info_profile.php?stu_id=${studentId}`);
             if (!response.ok) {
