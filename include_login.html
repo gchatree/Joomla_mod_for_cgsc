@@ -7,6 +7,9 @@
     let studentData = [];
     let currentView = 'grid';
     let currentFilter = 'all';
+    const login_id = <?php echo $stu_id;?>;
+    const usergroup = <?php echo $usergroup;?>;
+
 
 
     // Initialize main function that will run after page load
@@ -14,8 +17,6 @@
         const studentListGroup = document.querySelector('.u-group-1');
         if (!studentListGroup) return;
 
-        const login_id = <?php echo $stu_id;?>;
-        const usergroup = <?php echo $usergroup;?>;
 
         // Clear existing content and create search elements
         const container = studentListGroup.querySelector('.u-container-layout-2');
