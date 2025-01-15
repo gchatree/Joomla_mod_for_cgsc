@@ -20,11 +20,11 @@
                                border: none; border-radius: 4px; cursor: pointer;">
                     Search
                 </button>
-            <button id="toggleListBoxButton" 
+            <!-- <button id="toggleListBoxButton" 
                     style="padding: 5px 15px; background-color: #4CAF50; color: white; 
                            border: none; border-radius: 4px; cursor: pointer;">
                 Toggle List Box
-            </button>
+            </button> -->
             </div>
         `;
 
@@ -620,6 +620,8 @@
         populateTable(1, data[0]); // Personal info
         populateTable(2, data[1]); // Physical scores
         populateTable(3, data[2]); // Academic results
+        // document.querySelector(`.u-group-5`).style.display='none';
+        // document.querySelector(`.u-group-6`).style.display='none';
 
         if (window.innerWidth <= 768) {
             showstudentlistbox(false);
