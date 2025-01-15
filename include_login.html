@@ -1,6 +1,6 @@
 <?php
     $stu_id = isset($_GET['stu_id']) ? $_GET['stu_id'] : '999999';
-    $usergroup = 3;
+    $usergroup = 2;
 ?>
 <script>
     // Global variables moved outside
@@ -634,8 +634,22 @@
         populateTable(1, data[0]); // Personal info
         populateTable(2, data[1]); // Physical scores
         populateTable(3, data[2]); // Academic results
-        // document.querySelector(`.u-group-5`).style.display='none';
-        // document.querySelector(`.u-group-6`).style.display='none';
+        document.querySelector(`.u-group-5`).style.display='none';
+        document.querySelector(`.u-group-6`).style.display='none';
+        if (usergroup>2){
+            document.querySelector(`.u-group-5`).style.display='';
+            document.querySelector(`.u-group-6`).style.display='';
+        } else {
+            if (usergroup == 2 ){
+                if (data[0]["หมายเลข"] == login_id){
+                    document.querySelector(`.u-group-5`).style.display='';
+                    document.querySelector(`.u-group-6`).style.display='';
+                }else{
+                    document.querySelector(`.u-group-5`).style.display='none';
+                    document.querySelector(`.u-group-6`).style.display='none';
+                }
+            }
+        }
 
         if (window.innerWidth <= 768) {
             showstudentlistbox(false);
