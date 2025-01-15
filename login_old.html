@@ -1,0 +1,132 @@
+<?php
+$STUDENT_LIST_URL= 'index.php?option=com_content&view=article&id=121&catid=2&Itemid=151';
+$LOGIN_URL='index.php?option=com_content&view=article&id=123&catid=2&Itemid=151';
+$stu_id = isset($_GET['stu_id']) ? $_GET['stu_id'] : '999999';
+$user = JFactory::getUser();
+if ($user->guest) {
+   $login_id = 0; 
+   $logingroup = 0;
+} else {
+   $login_id = $user->id;
+   $logingroup = $user->groups ? reset($user->groups) : 0;
+}
+
+$usergroup = 3;
+
+if ($stu_id === "999999") {
+   if ($logingroup == 2) {
+       $stu_id = $login_id;
+       $usergroup = 3;
+   } else {
+       if ($login_id == 0) {
+           header('Location: ' . $LOGIN_URL);
+           exit();            
+       }else{
+           header('Location: ' . $STUDENT_LIST_URL);
+           exit();
+       }
+   }
+} elseif ($login_id == 0) {
+   $usergroup = 1;
+} elseif (intval($logingroup) === 2) {
+   if (intval($stu_id) === intval($login_id)) {
+       $usergroup = 3;
+   } else {
+       $usergroup = 1;
+   }
+} elseif (intval($logingroup) > 2) {
+   $usergroup = 3;
+} elseif (intval($logingroup) < 2) {
+   $usergroup = 1;
+}
+?>
+
+<script>
+const stu_id = <?php echo $stu_id;?>;
+usergroup = <?php echo $usergroup;?>;
+
+window.addEventListener('load', async function () {
+   // Profile image
+   const imageDiv = document.querySelector('#sec-afbb .u-image-2');
+   imageDiv.style.backgroundImage = `url("/student_image/${stu_id}.jpg")`;
+
+   // Student ID
+   const studentIdText = document.querySelector('#sec-c610 .u-text-2');
+   if (studentIdText) {
+       studentIdText.textContent = stu_id;
+   }
+
+   // Table styling
+   const styleSheet = document.createElement("style");
+   styleSheet.textContent = `
+       .u-table-1 {
+           width: 90% !important;
+           margin: 0 auto;
+       }
+       .u-table-1 td {
+           padding: 12px 15px;
+           font-size: 14px;
+       }
+       .u-table-1 td:first-child {
+           width: 40%;
+       }
+   `;
+   document.head.appendChild(styleSheet);
+
+   // Show/hide sections based on usergroup
+   const section5 = document.querySelector('#sec-8c30');
+   const section6 = document.querySelector('#sec-4ba8');
+
+   switch (Number(usergroup)) {
+       case 1:
+           if (section5) section5.style.display = 'none';
+           if (section6) section6.style.display = 'none';
+           break;
+       case 2:
+           if (section6) section6.style.display = 'none';
+           break;
+   }
+
+   try {
+       const response = await fetch(`/sheet/student_info_profile.php?stu_id=${stu_id}`);
+       const data = await response.json();
+
+       // Personal Info Table
+       const personalTable = document.querySelector('#sec-89f3 .u-table-1 tbody');
+       personalTable.innerHTML = Object.entries(data[0])
+           .map(([key, value]) => `
+               <tr>
+                   <td class="u-border-1 u-border-grey-dark-1 u-table-cell">${key}</td>
+                   <td class="u-border-1 u-border-grey-dark-1 u-table-cell">${value}</td>
+               </tr>
+           `).join('');
+
+       // Education Info Table
+       if (usergroup >= 2) {
+           const educationTable = document.querySelector('#sec-8c30 .u-table-1 tbody');
+           educationTable.innerHTML = Object.entries(data[1])
+               .map(([key, value]) => `
+                   <tr>
+                       <td class="u-border-1 u-border-grey-dark-1 u-table-cell">${key}</td>
+                       <td class="u-border-1 u-border-grey-dark-1 u-table-cell">${value}</td>
+                   </tr>
+               `).join('');
+       }
+
+       // Academic Results Table
+       if (usergroup === 3) {
+           const academicTable = document.querySelector('#sec-4ba8 .u-table-1 tbody');
+           academicTable.innerHTML = Object.entries(data[2])
+               .map(([key, value]) => `
+                   <tr>
+                       <td class="u-border-1 u-border-grey-dark-1 u-table-cell">${key}</td>
+                       <td class="u-border-1 u-border-grey-dark-1 u-table-cell">${value}</td>
+                   </tr>
+               `).join('');
+       }
+
+   } catch (error) {
+       console.error('Error fetching data:', error);
+   }
+});
+</script>

@@ -1,13 +1,21 @@
+<?php
+    $stu_id = isset($_GET['stu_id']) ? $_GET['stu_id'] : '999999';
+    $usergroup = 3;
+?>
 <script>
     // Global variables moved outside
     let studentData = [];
     let currentView = 'grid';
     let currentFilter = 'all';
 
+
     // Initialize main function that will run after page load
     function initializeStudentSystem() {
         const studentListGroup = document.querySelector('.u-group-1');
         if (!studentListGroup) return;
+
+        const login_id = <?php echo $stu_id;?>;
+        const usergroup = <?php echo $usergroup;?>;
 
         // Clear existing content and create search elements
         const container = studentListGroup.querySelector('.u-container-layout-2');
@@ -39,6 +47,11 @@
 
         // Load initial data
         loadIdList();
+
+        // check login
+        if (login_id =='999999'){} else{
+            handleStudentSearch(login_id);
+        }
     }
 
     // Style addition function
