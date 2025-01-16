@@ -84,7 +84,8 @@
 
         // check login
         if (get_id =='999999'){} else{
-            handleStudentSearch(login_id);
+            if(usergroup==2){
+            handleStudentSearch(login_id);}
         }
     }
 
