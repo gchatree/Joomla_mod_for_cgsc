@@ -1,6 +1,40 @@
 <?php
     $stu_id = isset($_GET['stu_id']) ? $_GET['stu_id'] : '999999';
-    $usergroup = 2;
+
+
+    $STUDENT_LIST_URL= 'index.php?option=com_content&view=article&id=121&catid=2&Itemid=151';
+    $LOGIN_URL='index.php?option=com_content&view=article&id=123&catid=2&Itemid=151';
+
+
+    $user = JFactory::getUser();
+    if ($user->guest) {
+       $login_id = 0; 
+       $logingroup = 0;
+    } else {
+       $login_id = $user->id;
+       $logingroup = $user->groups ? reset($user->groups) : 0;
+    }
+    
+
+    if ($stu_id === "999999") {
+       if ($logingroup == 0) {
+           $usergroup = 0;
+       } else {
+            $usergroup = $logingroup;
+            $stu_id = $login_id;
+       }
+    } else {
+        if ($login_id == 0) {
+            header('Location: ' . $LOGIN_URL);
+            exit();            
+        } else {
+            $usergroup = $logingroup;
+            $stu_id = $login_id;
+        }
+    }
+
+
+
 ?>
 <script>
     // Global variables moved outside
@@ -257,6 +291,10 @@
                 position:
         `;
         document.head.appendChild(styleSheet);
+        //Add style scroll y in cell-2
+        document.querySelector(`.u-container-layout-4`).style.height ='700px';
+        document.querySelector(`.u-container-layout-4`).style.overflowY ='auto';
+        
     }
 
     // Font Awesome addition function
@@ -292,6 +330,9 @@
         if (toggleButton) {
             toggleButton.addEventListener('click', toggleBoxH6);
         }
+
+
+
     }
 
     // Your existing functions, moved outside and made global
@@ -669,6 +710,7 @@
             }
             const data = await response.json();
             updateProfile(data);
+            document.getElementById('studentIdInput').value = '';
         } catch (error) {
             console.error('Error fetching student data:', error);
         }
