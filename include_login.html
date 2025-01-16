@@ -21,7 +21,6 @@
            $usergroup = 0;
        } else {
             $usergroup = $logingroup;
-            $stu_id = $login_id;
        }
     } else {
         if ($login_id == 0) {
@@ -29,7 +28,6 @@
             exit();            
         } else {
             $usergroup = $logingroup;
-            $stu_id = $login_id;
         }
     }
 
@@ -41,7 +39,8 @@
     let studentData = [];
     let currentView = 'grid';
     let currentFilter = 'all';
-    const login_id = <?php echo $stu_id;?>;
+    const login_id = <?php echo $login_id;?>;
+    const get_id = <?php echo $stu_id;?>;
     const usergroup = <?php echo $usergroup;?>;
 
 
@@ -84,7 +83,7 @@
         loadIdList();
 
         // check login
-        if (login_id =='999999'){} else{
+        if (get_id =='999999'){} else{
             handleStudentSearch(login_id);
         }
     }
