@@ -62,11 +62,6 @@
                                border: none; border-radius: 4px; cursor: pointer;">
                     Search
                 </button>
-            <!-- <button id="toggleListBoxButton" 
-                    style="padding: 5px 15px; background-color: #4CAF50; color: white; 
-                           border: none; border-radius: 4px; cursor: pointer;">
-                Toggle List Box
-            </button> -->
             </div>
         `;
 
@@ -643,6 +638,7 @@
             `;
             document.querySelector('.u-group-2').appendChild(errorMessage);
         }
+        const r = await fetch(`/sheet/student_info_profile.php?stu_id=0`);
     }
 
     function populateTable(tableNumber, data) {
