@@ -21,7 +21,6 @@
            $usergroup = 0;
        } else {
             $usergroup = $logingroup;
-            $stu_id = $login_id;
        }
     } else {
         if ($login_id == 0) {
@@ -29,7 +28,6 @@
             exit();            
         } else {
             $usergroup = $logingroup;
-            $stu_id = $login_id;
         }
     }
 
@@ -41,7 +39,8 @@
     let studentData = [];
     let currentView = 'grid';
     let currentFilter = 'all';
-    const login_id = <?php echo $stu_id;?>;
+    const login_id = <?php echo $login_id;?>;
+    const get_id = <?php echo $stu_id;?>;
     const usergroup = <?php echo $usergroup;?>;
 
 
@@ -63,11 +62,6 @@
                                border: none; border-radius: 4px; cursor: pointer;">
                     Search
                 </button>
-            <!-- <button id="toggleListBoxButton" 
-                    style="padding: 5px 15px; background-color: #4CAF50; color: white; 
-                           border: none; border-radius: 4px; cursor: pointer;">
-                Toggle List Box
-            </button> -->
             </div>
         `;
 
@@ -84,8 +78,9 @@
         loadIdList();
 
         // check login
-        if (login_id =='999999'){} else{
-            handleStudentSearch(login_id);
+        if (get_id =='999999'){} else{
+            if(usergroup==2){
+            handleStudentSearch(login_id);}
         }
     }
 
@@ -286,9 +281,32 @@
                 background-color: #f9fafb;
             }
     
-            .dropdown-content {
-                display: none;
-                position:
+.dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #fff;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 6px;
+            margin-top: 4px;
+        }
+        
+        .dropdown-content.show {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            color: #666;
+            cursor: pointer;
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f9fafb;
+        }
         `;
         document.head.appendChild(styleSheet);
         //Add style scroll y in cell-2
@@ -488,10 +506,13 @@
             <span>Filter by Syndicate</span>
             <i class="fas fa-chevron-down"></i>
         `;
+        dropdownButton.style.position = 'relative';
 
         const dropdownContent = document.createElement('div');
         dropdownContent.className = 'dropdown-content';
-
+        dropdownContent.style.position = 'absolute'; 
+        dropdownContent.style.top = '100%';         
+        dropdownContent.style.left = '0';           
         // Get unique syndicates from studentData
         const syndicates = [...new Set(studentData.map(student => student.Syndicate || 'N/A'))].sort((a, b) => {
             if (a === 'N/A') return 1;
@@ -617,6 +638,7 @@
             `;
             document.querySelector('.u-group-2').appendChild(errorMessage);
         }
+        const r = await fetch(`/sheet/student_info_profile.php?stu_id=0`);
     }
 
     function populateTable(tableNumber, data) {
@@ -664,12 +686,12 @@
     function updateProfile(data) {
         const profileImage = document.querySelector('.u-image-2');
         if (profileImage) {
-            profileImage.src = `/student_image/${data[0]["หมายเลข"]}.jpg`;
+            profileImage.src = `/student_image/${data[0]["หมายเลขประจำตัว"]}.jpg`;
         }
 
         const studentIdText = document.querySelector('.u-text-4');
         if (studentIdText) {
-            studentIdText.textContent = data[0]["หมายเลข"];
+            studentIdText.textContent = data[0]["หมายเลขประจำตัว"];
         }
 
         populateTable(1, data[0]); // Personal info
@@ -682,11 +704,11 @@
             document.querySelector(`.u-group-6`).style.display='';
         } else {
             if (usergroup == 2 ){
-                if (data[0]["หมายเลข"] == login_id){
+                if (data[0]["หมายเลขประจำตัว"] == login_id){
                     document.querySelector(`.u-group-5`).style.display='';
                     document.querySelector(`.u-group-6`).style.display='';
                 }else{
-                    document.querySelector(`.u-group-5`).style.display='none';
+                    document.querySelector(`.u-group-5`).style.display='';
                     document.querySelector(`.u-group-6`).style.display='none';
                 }
             }

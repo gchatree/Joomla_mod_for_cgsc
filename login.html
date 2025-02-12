@@ -1,0 +1,721 @@
+<?php
+    $stu_id = isset($_GET['stu_id']) ? $_GET['stu_id'] : '999999';
+
+
+    $STUDENT_LIST_URL= 'index.php?option=com_content&view=article&id=121&catid=2&Itemid=151';
+    $LOGIN_URL='index.php?option=com_content&view=article&id=123&catid=2&Itemid=151';
+
+
+    $user = JFactory::getUser();
+    if ($user->guest) {
+       $login_id = 0; 
+       $logingroup = 0;
+    } else {
+       $login_id = $user->id;
+       $logingroup = $user->groups ? reset($user->groups) : 0;
+    }
+    
+
+    if ($stu_id === "999999") {
+       if ($logingroup == 0) {
+           $usergroup = 0;
+       } else {
+            $usergroup = $logingroup;
+       }
+    } else {
+        if ($login_id == 0) {
+            header('Location: ' . $LOGIN_URL);
+            exit();            
+        } else {
+            $usergroup = $logingroup;
+        }
+    }
+
+
+
+?>
+<script>
+    // Global variables moved outside
+    let studentData = [];
+    let currentView = 'grid';
+    let currentFilter = 'all';
+    const login_id = <?php echo $login_id;?>;
+    const get_id = <?php echo $stu_id;?>;
+    const usergroup = <?php echo $usergroup;?>;
+
+
+
+    // Initialize main function that will run after page load
+    function initializeStudentSystem() {
+        const studentListGroup = document.querySelector('.u-group-1');
+        if (!studentListGroup) return;
+
+
+        // Clear existing content and create search elements
+        const container = studentListGroup.querySelector('.u-container-layout-2');
+        container.innerHTML = `
+            <div style="display: flex; padding: 10px; gap: 10px;">
+                <input type="text" id="studentIdInput" placeholder="Enter Student ID" 
+                       style="flex: 1; padding: 5px; border: 1px solid #ccc; border-radius: 4px;">
+                <button id="searchButton" 
+                        style="padding: 5px 15px; background-color: #0066cc; color: white; 
+                               border: none; border-radius: 4px; cursor: pointer;">
+                    Search
+                </button>
+            <!-- <button id="toggleListBoxButton" 
+                    style="padding: 5px 15px; background-color: #4CAF50; color: white; 
+                           border: none; border-radius: 4px; cursor: pointer;">
+                Toggle List Box
+            </button> -->
+            </div>
+        `;
+
+        // Add styles
+        addStyles();
+
+        // Add Font Awesome if not present
+        addFontAwesome();
+
+        // Initialize event listeners
+        initializeEventListeners();
+
+        // Load initial data
+        loadIdList();
+
+        // check login
+        if (get_id =='999999'){} else{
+            if(usergroup==2){
+            handleStudentSearch(login_id);}
+        }
+    }
+
+    // Style addition function
+    function addStyles() {
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            .content-container {
+                height: calc(100vh - 100px);
+                overflow-y: auto;
+                padding: 0 10px;
+            }
+            .div-g-l{
+                width: 100%;
+            }
+            .grid-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 10px;
+            }
+    
+            @media (min-width: 1024px) and (max-width: 3600px){
+                .grid-container {
+                    grid-template-columns: repeat(4, 1fr);
+                }
+            }
+    
+            @media (min-width: 768px) and (max-width: 1023px){
+                .grid-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+    
+            @media (min-width: 480px) and (max-width: 767px){
+                .grid-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+            }
+    
+            @media (min-width: 0px) and (max-width: 479px){
+                .grid-container {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                .u-group-2 {
+                    display: block; /* Default visible state on mobile */
+                }
+            }
+    
+            .student-card {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 5px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                cursor: pointer;
+                background-color: white;
+                text-decoration: none;
+                color: inherit;
+                opacity: 0;
+                transform: scale(0.5);
+                transition: all 0.6s ease-out;
+            }
+    
+            .student-card:hover {
+                box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+                transform: translateY(-5px);
+            }
+    
+            .student-card.visible {
+                opacity: 1;
+                transform: scale(1);
+            }
+    
+            .image-circle {
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                overflow: hidden;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #f0f0f0;
+            }
+    
+            .image-circle img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                object-position: top;
+            }
+    
+            .image-circle .fa-user {
+                font-size: 30px;
+                color: #999;
+            }
+    
+            .student-id {
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 3px;
+            }
+    
+            .student-name {
+                font-size: 14px;
+                font-weight: bold;
+                color: #333;
+                text-align: center;
+            }
+    
+            .student-syndicate {
+                font-size: 12px;
+                color: #666;
+                margin-top: 3px;
+            }
+    
+            .view-toggle-container {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 16px;
+                border-bottom: 1px solid #e5e7eb;
+                margin-bottom: 16px;
+            }
+    
+            .view-label {
+                font-size: 14px;
+                font-weight: 500;
+                color: #666;
+            }
+    
+            .switch-container {
+                width: 51px;
+                height: 31px;
+                position: relative;
+            }
+    
+            .checkbox {
+                opacity: 0;
+                width: 0;
+                height: 0;
+                position: absolute;
+            }
+    
+            .switch {
+                width: 100%;
+                height: 100%;
+                display: block;
+                background-color: #B6CBBD;
+                border-radius: 16px;
+                cursor: pointer;
+                transition: all 0.2s ease-out;
+            }
+    
+            .slider {
+                width: 27px;
+                height: 27px;
+                position: absolute;
+                left: calc(50% - 27px/2 - 10px);
+                top: calc(50% - 27px/2);
+                border-radius: 50%;
+                background: #FFFFFF;
+                box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15), 0px 3px 1px rgba(0, 0, 0, 0.06);
+                transition: all 0.2s ease-out;
+                cursor: pointer;
+            }
+    
+            .checkbox:checked + .switch {
+                background-color: #34C759;
+            }
+    
+            .checkbox:checked + .switch .slider {
+                left: calc(50% - 27px/2 + 10px);
+                top: calc(50% - 27px/2);
+            }
+    
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+    
+            .dropdown-button {
+                padding: 8px 16px;
+                background-color: #ffffff;
+                border: 1px solid #e5e7eb;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                color: #666;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+    
+            .dropdown-button:hover {
+                background-color: #f9fafb;
+            }
+    
+            .dropdown-content {
+                display: none;
+                position:
+        `;
+        document.head.appendChild(styleSheet);
+        //Add style scroll y in cell-2
+        document.querySelector(`.u-container-layout-4`).style.height ='700px';
+        document.querySelector(`.u-container-layout-4`).style.overflowY ='auto';
+        
+    }
+
+    // Font Awesome addition function
+    function addFontAwesome() {
+        if (!document.querySelector('link[href*="font-awesome"]')) {
+            const fontAwesome = document.createElement('link');
+            fontAwesome.rel = 'stylesheet';
+            fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
+            document.head.appendChild(fontAwesome);
+        }
+    }
+
+    // Event listeners initialization
+    function initializeEventListeners() {
+        const searchButton = document.getElementById('searchButton');
+        if (searchButton) {
+            searchButton.addEventListener('click', () => {
+                const studentId = document.getElementById('studentIdInput').value;
+                handleStudentSearch(studentId);
+            });
+        }
+
+        const studentIdInput = document.getElementById('studentIdInput');
+        if (studentIdInput) {
+            studentIdInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    handleStudentSearch(studentIdInput.value);
+                }
+            });
+        }
+        // Add event listener for toggle button
+        const toggleButton = document.getElementById('toggleListBoxButton');
+        if (toggleButton) {
+            toggleButton.addEventListener('click', toggleBoxH6);
+        }
+
+
+
+    }
+
+    // Your existing functions, moved outside and made global
+    async function tryLoadImage(studentId) {
+        const extensions = ['jpg', 'png', 'jpeg', 'gif'];
+
+        const imagePromises = extensions.map(ext => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const path = `/student_image/${studentId}.${ext}`;
+
+                img.onload = () => resolve(path);
+                img.onerror = () => resolve(null);
+                img.src = path;
+            });
+        });
+
+        for (const imagePromise of imagePromises) {
+            const path = await imagePromise;
+            if (path) return path;
+        }
+
+        return null;
+    }
+
+    function createStudentCards(students) {
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'grid-container';
+
+        students.forEach(student => {
+            const card = document.createElement('a');
+            card.className = 'student-card';
+            card.href = '#';
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleStudentSearch(student.stu_id);
+            });
+
+            card.innerHTML = `
+                <div class="image-circle">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="student-id">${student.stu_id}</div>
+                <div class="student-name">${student.FullName}</div>
+                <div class="student-syndicate">พวกที่ ${student.Syndicate || 'N/A'}</div>
+            `;
+
+            gridContainer.appendChild(card);
+
+            tryLoadImage(student.stu_id).then(imagePath => {
+                if (imagePath) {
+                    const imageCircle = card.querySelector('.image-circle');
+                    const img = document.createElement('img');
+                    img.src = imagePath;
+                    img.alt = student.FullName;
+
+                    img.onload = () => {
+                        imageCircle.innerHTML = '';
+                        imageCircle.appendChild(img);
+                    };
+                }
+            }).catch(console.error);
+        });
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            },
+            {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            }
+        );
+
+        gridContainer.querySelectorAll('.student-card').forEach(card => {
+            observer.observe(card);
+        });
+
+        return gridContainer;
+    }
+
+    function createStudentTable(students) {
+        const table = document.createElement('table');
+        table.className = 'student-table';
+
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Syndicate</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${students.map(student => `
+                    <tr>
+                        <td><a href="#" data-student-id="${student.stu_id}">${student.stu_id}</a></td>
+                        <td><a href="#" data-student-id="${student.stu_id}">${student.FullName}</a></td>
+                        <td><a href="#" data-student-id="${student.stu_id}">พวกที่ ${student.Syndicate || 'N/A'}</a></td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        `;
+
+        table.querySelectorAll('a[data-student-id]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleStudentSearch(link.dataset.studentId);
+            });
+        });
+
+        return table;
+    }
+
+    function createViewToggleSwitch(onViewChange) {
+        const toggleContainer = document.createElement('div');
+        toggleContainer.className = 'view-toggle-container';
+
+        const gridLabel = document.createElement('span');
+        gridLabel.className = 'view-label';
+        gridLabel.textContent = 'Grid View';
+
+        const switchContainer = document.createElement('div');
+        switchContainer.className = 'switch-container';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'checkbox';
+        checkbox.id = 'view-toggle';
+
+        const switchLabel = document.createElement('label');
+        switchLabel.className = 'switch';
+        switchLabel.setAttribute('for', 'view-toggle');
+
+        const slider = document.createElement('span');
+        slider.className = 'slider';
+
+        const listLabel = document.createElement('span');
+        listLabel.className = 'view-label';
+        listLabel.textContent = 'List View';
+
+        // Create dropdown button and content
+        const dropdown = document.createElement('div');
+        dropdown.className = 'dropdown';
+
+        const dropdownButton = document.createElement('button');
+        dropdownButton.className = 'dropdown-button';
+        dropdownButton.innerHTML = `
+            <span>Filter by Syndicate</span>
+            <i class="fas fa-chevron-down"></i>
+        `;
+
+        const dropdownContent = document.createElement('div');
+        dropdownContent.className = 'dropdown-content';
+
+        // Get unique syndicates from studentData
+        const syndicates = [...new Set(studentData.map(student => student.Syndicate || 'N/A'))].sort((a, b) => {
+            if (a === 'N/A') return 1;
+            if (b === 'N/A') return -1;
+            return a - b;
+        });
+
+        // Function to apply filter
+        const applyFilter = (filter) => {
+            currentFilter = filter;
+            dropdownButton.querySelector('span').textContent =
+                filter === 'all' ? 'Filter by Syndicate' :
+                    filter === 'N/A' ? 'No Syndicate' :
+                        `Syndicate ${filter}`;
+
+            const contentContainer = toggleContainer.parentElement.querySelector('.content-container');
+            const filteredStudents = filter === 'all'
+                ? studentData
+                : studentData.filter(student => (student.Syndicate || 'N/A') === filter);
+
+            contentContainer.innerHTML = '';
+            contentContainer.appendChild(
+                currentView === 'grid' ? createStudentCards(filteredStudents) : createStudentTable(filteredStudents)
+            );
+            dropdownContent.classList.remove('show');
+        };
+
+        // Add "All" option
+        const allItem = document.createElement('div');
+        allItem.className = 'dropdown-item';
+        allItem.textContent = 'All Syndicates';
+        allItem.addEventListener('click', () => applyFilter('all'));
+        dropdownContent.appendChild(allItem);
+
+        // Add syndicate options
+        syndicates.forEach(syndicate => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.textContent = syndicate === 'N/A' ? 'No Syndicate' : `Syndicate ${syndicate}`;
+            item.addEventListener('click', () => applyFilter(syndicate));
+            dropdownContent.appendChild(item);
+        });
+
+        // Toggle dropdown on button click
+        dropdownButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdownContent.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            dropdownContent.classList.remove('show');
+        });
+
+        dropdown.appendChild(dropdownButton);
+        dropdown.appendChild(dropdownContent);
+
+        switchLabel.appendChild(slider);
+        switchContainer.appendChild(checkbox);
+        switchContainer.appendChild(switchLabel);
+
+        toggleContainer.appendChild(gridLabel);
+        toggleContainer.appendChild(switchContainer);
+        toggleContainer.appendChild(listLabel);
+        toggleContainer.appendChild(dropdown);
+
+        checkbox.addEventListener('change', () => {
+            currentView = checkbox.checked ? 'list' : 'grid';
+            onViewChange(currentView);
+        });
+
+        return toggleContainer;
+    }
+
+    function createStudentContainer(students) {
+        const containerWrapper = document.createElement('div');
+        containerWrapper.classList = "div-g-l";
+        const toggleButtons = createViewToggleSwitch((viewType) => {
+            const contentContainer = containerWrapper.querySelector('.content-container');
+            const filteredStudents = currentFilter === 'all'
+                ? students
+                : students.filter(student => (student.Syndicate || 'N/A') === currentFilter);
+            contentContainer.innerHTML = '';
+            contentContainer.appendChild(
+                viewType === 'grid' ? createStudentCards(filteredStudents) : createStudentTable(filteredStudents)
+            );
+        });
+
+        containerWrapper.appendChild(toggleButtons);
+
+        const contentContainer = document.createElement('div');
+        contentContainer.className = 'content-container';
+        contentContainer.appendChild(createStudentCards(students));
+        containerWrapper.appendChild(contentContainer);
+
+        return containerWrapper;
+    }
+
+    async function loadIdList() {
+        try {
+            const response = await fetch('/sheet/stu_id.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            studentData = data[0];
+
+            const studentListBox = document.querySelector('.u-group-2');
+            if (studentListBox) {
+                studentListBox.innerHTML = '';
+                studentListBox.appendChild(createStudentContainer(studentData));
+            }
+        } catch (error) {
+            console.error('Error loading ID list:', error);
+            const errorMessage = document.createElement('div');
+            errorMessage.style.color = 'red';
+            errorMessage.style.padding = '20px';
+            errorMessage.style.textAlign = 'center';
+            errorMessage.innerHTML = `
+                เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.message}
+                <br>
+                กรุณาตรวจสอบการเชื่อมต่อ
+            `;
+            document.querySelector('.u-group-2').appendChild(errorMessage);
+        }
+    }
+
+    function populateTable(tableNumber, data) {
+        const table = document.querySelector(`.u-table-${tableNumber}`);
+        if (!table) return;
+
+        const tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        Object.entries(data).forEach(([key, value]) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="u-border-1 u-border-grey-dark-1 u-table-cell">${key}</td>
+                <td class="u-border-1 u-border-grey-dark-1 u-table-cell">${value}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function toggleBoxH6() {
+        if (window.innerWidth <= 576) {
+            const listBox = document.querySelector('.u-group-2');
+            if (listBox) {
+                if (listBox.style.display === 'none') {
+                    showstudentlistbox(true);
+                } else {
+                    showstudentlistbox(false);
+                }
+            }
+        }
+    }
+    // show/hide student list box
+    function showstudentlistbox(showed){
+        const listBoxs = document.querySelector('.u-group-2');
+        if (showed) {
+            listBoxs.style.display='';
+        } else {
+            listBoxs.style.display='none';
+        }
+    }
+
+    // Function to update profile with fetched data
+    function updateProfile(data) {
+        const profileImage = document.querySelector('.u-image-2');
+        if (profileImage) {
+            profileImage.src = `/student_image/${data[0]["หมายเลข"]}.jpg`;
+        }
+
+        const studentIdText = document.querySelector('.u-text-4');
+        if (studentIdText) {
+            studentIdText.textContent = data[0]["หมายเลข"];
+        }
+
+        populateTable(1, data[0]); // Personal info
+        populateTable(2, data[1]); // Physical scores
+        populateTable(3, data[2]); // Academic results
+        document.querySelector(`.u-group-5`).style.display='none';
+        document.querySelector(`.u-group-6`).style.display='none';
+        if (usergroup>2){
+            document.querySelector(`.u-group-5`).style.display='';
+            document.querySelector(`.u-group-6`).style.display='';
+        } else {
+            if (usergroup == 2 ){
+                if (data[0]["หมายเลข"] == login_id){
+                    document.querySelector(`.u-group-5`).style.display='';
+                    document.querySelector(`.u-group-6`).style.display='';
+                }else{
+                    document.querySelector(`.u-group-5`).style.display='none';
+                    document.querySelector(`.u-group-6`).style.display='none';
+                }
+            }
+        }
+
+        if (window.innerWidth <= 768) {
+            showstudentlistbox(false);
+        }
+        
+    }
+
+    async function handleStudentSearch(studentId) {
+        if (!studentId) {
+            showstudentlistbox(true);
+            return;
+        }
+        try {
+            const response = await fetch(`/sheet/student_info_profile.php?stu_id=${studentId}`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            updateProfile(data);
+            document.getElementById('studentIdInput').value = '';
+        } catch (error) {
+            console.error('Error fetching student data:', error);
+        }
+    }
+
+    // Run initialization after page load
+    document.addEventListener('DOMContentLoaded', initializeStudentSystem);
+</script>
