@@ -1,43 +1,31 @@
 <?php
-function sheet_updated($apiKey, $spreadsheetId, $sheetName, $cellRange, $lastUpdateFile){
-// Build the Google Sheets API URL
+function sheet_updated($apiKey, $spreadsheetId, $sheetName, $cellRange, $lastUpdateFile) {
+    // Fetch value from Google Sheets
+    $url = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/{$sheetName}!{$cellRange}?key={$apiKey}";
 
-$url = "https://sheets.googleapis.com/v4/spreadsheets/{$spreadsheetId}/values/{$sheetName}!{$cellRange}?key={$apiKey}";
-// Create context for file_get_contents with options
-$context = stream_context_create([
-    'http' => [
-        'method' => 'GET',
-        'timeout' => 30,
-        'user_agent' => 'Google Sheets API Client',
-        'header' => "Accept: application/json\r\n"
-    ]
-]);
+    // Initialize cURL session
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-// Use file_get_contents instead of cURL
-$response = @file_get_contents($url, false, $context);
+    // Send the request
+    $response = curl_exec($ch);
+    // Check for cURL errors
+    if (curl_errno($ch)) {
+        error_log('cURL Error: ' . curl_error($ch));
+        return false;
+    }
 
-// Check if the request failed
-if ($response === false) {
-    // Get more detailed error information
-    $error = error_get_last();
-    die("Request failed: " . ($error['message'] ?? 'Unknown error occurred'));
-}
+    // Close cURL session
+    curl_close($ch);
 
+    // Decode the JSON response
+    $data = json_decode($response, true);
 
-// Parse the JSON response
-$data = json_decode($response, true);
+    // Extract current value
+    $currentValue = isset($data['values'][0][0]) ? $data['values'][0][0] : null;
 
-// Check for JSON decode errors
-if (json_last_error() !== JSON_ERROR_NONE) {
-    die("JSON Decode Error: " . json_last_error_msg());
-}
-
-// Extract and display the value from cell A1
-
-$currentValue = isset($data['values'][0][0]) ? $data['values'][0][0] : null;
-
-//echo ("value is :" . $currentValue);
-
+    // If no value retrieved, return false
     if ($currentValue === null) {
         return false;
     }
@@ -62,8 +50,6 @@ $currentValue = isset($data['values'][0][0]) ? $data['values'][0][0] : null;
     return false;
     }
 }
-
-
 function update_json($apiKey, $spreadsheetId, $sheetName, $outputFile) {
         // Construct API URL
         $inputJson = "https://sheets.googleapis.com/v4/spreadsheets/$spreadsheetId/values/$sheetName?key=$apiKey";
@@ -190,10 +176,11 @@ function jsonToGroupedData($jsonFilePath, $stu_id) {
     return $result;
 }
 
-
-
 // Usage example:
 header('Content-Type: application/json; charset=utf-8');
+
+
+
 // Configuration
 $apiKey = 'AIzaSyBzbPw2I0pqljbPfZERB_-peWTJNQHFR1o';
 $spreadsheetId = '1C58zCYzJf7WYq_17MKzdse6MKf6rpfoZftvtlDm24CY';
@@ -211,4 +198,6 @@ if (sheet_updated($apiKey, $spreadsheetId, $sheetName, $cellRange, $lastUpdateFi
  }
  $res = jsonToGroupedData('student.json',$student_id);
  echo json_encode($res, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+
 ?>
