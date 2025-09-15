@@ -1,0 +1,135 @@
+<?php
+    $STUDENT_LIST_URL= 'index.php?option=com_content&view=article&id=121&catid=2&Itemid=151';
+    $stu_id = isset($_GET['stu_id']) ? $_GET['stu_id'] : '999999';
+    $user = JFactory::getUser();
+    if ($user->guest) {
+        $login_id = 0;
+        $logingroup = 0;
+    } else {
+        $login_id = $user->id;
+        $logingroup = $user->groups ? reset($user->groups) : 0;
+    }
+    
+    $usergroup = 3;
+
+
+    if ($stu_id === "999999") {
+        if ($logingroup == 2) {
+            $stu_id = $login_id;
+            $usergroup = 3;
+        } else {
+            header('Location: ' . $STUDENT_LIST_URL);
+            exit();
+        }
+    } elseif ($login_id == 0) {
+        $usergroup = 1;
+    } elseif (intval($logingroup) === 2) {
+        // Convert both to integers for safe comparison
+        if (intval($stu_id) === intval($login_id)) {
+            $usergroup = 3;
+        } else {
+            $usergroup = 1;
+        }
+    } elseif (intval($logingroup) > 2) {
+        $usergroup = 3;
+    } elseif (intval($logingroup) < 2) {
+        $usergroup = 1;
+    }
+?>
+
+<script>
+
+    //const stu_id = 102001;
+    //usergroup = 1;
+
+    const stu_id = <? echo $stu_id;?>;
+    usergroup = <? echo $usergroup; ?>;
+
+    window.addEventListener('load', async function () {
+        // Change the profile image
+        const imageDiv = document.querySelector('#sec-c610 .u-image-1');
+        imageDiv.style.backgroundImage = `url("/student_image/${stu_id}.jpg")`;
+
+        // Change the student ID text
+        const studentIdText = document.querySelector('.u-text-2');
+        if (studentIdText) {
+            studentIdText.textContent = stu_id;
+        }
+
+        // Add CSS styles for table width
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = `
+            .u-table-1 {
+                width: 90% !important;
+                margin: 0 auto;
+            }
+            .u-table-1 td {
+                padding: 12px 15px;
+                font-size: 14px;
+            }
+            .u-table-1 td:first-child {
+                width: 40%;
+            }
+        `;
+        document.head.appendChild(styleSheet);
+
+        // Hide/Show sections based on usergroup
+        const section5 = document.querySelector('#sec-8c30');  // Education Info section
+        const section6 = document.querySelector('#sec-4ba8');  // Academic Results section
+
+        switch (Number(usergroup)) {
+            case 1:
+                // Only show Personal Info
+                if (section5) section5.style.display = 'none';
+                if (section6) section6.style.display = 'none';
+                break;
+            case 2:
+                // Show Personal Info and Education Info
+                if (section6) section6.style.display = 'none';
+                break;
+            case 3:
+                // Show all
+                break;
+        }
+
+        // Fetch data from PHP endpoint
+        try {
+            const response = await fetch(`/sheet/student_info_profile.php?stu_id=${stu_id}`);
+            const data = await response.json();
+
+            // Function to populate a table
+            function populateTable(tableSelector, data) {
+                const table = document.querySelector(tableSelector + ' tbody');
+                if (!table) return; // Skip if table doesn't exist or is hidden
+
+                table.innerHTML = ''; // Clear existing content
+
+                for (let key in data) {
+                    const row = table.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+
+                    cell1.className = 'u-border-1 u-border-grey-dark-1 u-table-cell';
+                    cell2.className = 'u-border-1 u-border-grey-dark-1 u-table-cell';
+
+                    cell1.textContent = key;
+                    cell2.textContent = data[key];
+                }
+            }
+
+            // Populate tables based on usergroup
+            populateTable('#sec-89f3 .u-table-1', data[0]);  // Personal Info - always show
+
+            if (usergroup >= 2) {
+                populateTable('#sec-8c30 .u-table-1', data[1]);  // Education Info
+            }
+
+            if (usergroup === 3) {
+                populateTable('#sec-4ba8 .u-table-1', data[2]);  // Academic Results
+            }
+
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    });
+</script>
